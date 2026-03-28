@@ -1,0 +1,5 @@
+{
+  "name": "FuelFit",
+  "description": "AI-powered meal scanning, personalized diet plans, and guided gym exercises all in one app.",
+  "requestFramePermissions": ["camera"]
+}

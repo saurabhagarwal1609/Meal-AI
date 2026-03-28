@@ -1,0 +1,72 @@
+{
+  "entities": {
+    "UserProfile": {
+      "title": "User Profile",
+      "description": "Stores user physical data and fitness goals.",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string", "description": "The unique identifier for the user." },
+        "firstName": { "type": "string" },
+        "lastName": { "type": "string" },
+        "displayName": { "type": "string" },
+        "email": { "type": "string", "format": "email" },
+        "weight": { "type": "number", "description": "Weight in kg." },
+        "height": { "type": "number", "description": "Height in cm." },
+        "age": { "type": "number" },
+        "gender": { "type": "string", "enum": ["male", "female", "other"] },
+        "activityLevel": { "type": "string", "enum": ["sedentary", "light", "moderate", "active", "very_active"] },
+        "goal": { "type": "string", "enum": ["lose_weight", "maintain", "gain_muscle"] },
+        "dailyCalorieTarget": { "type": "number" },
+        "onboardingCompleted": { "type": "boolean" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["uid", "email"]
+    },
+    "Meal": {
+      "title": "Meal Log",
+      "description": "A logged meal with nutritional information.",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string" },
+        "name": { "type": "string" },
+        "calories": { "type": "number" },
+        "protein": { "type": "number" },
+        "carbs": { "type": "number" },
+        "fat": { "type": "number" },
+        "imageUrl": { "type": "string" },
+        "timestamp": { "type": "string", "format": "date-time" }
+      },
+      "required": ["uid", "name", "calories", "timestamp"]
+    },
+    "Workout": {
+      "title": "Workout Log",
+      "description": "A logged exercise or workout session.",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string" },
+        "exerciseName": { "type": "string" },
+        "sets": { "type": "number" },
+        "reps": { "type": "number" },
+        "weight": { "type": "number" },
+        "duration": { "type": "number", "description": "Duration in minutes." },
+        "intensity": { "type": "string", "enum": ["low", "medium", "high"] },
+        "timestamp": { "type": "string", "format": "date-time" }
+      },
+      "required": ["uid", "exerciseName", "timestamp"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": "UserProfile",
+      "description": "User profiles."
+    },
+    "/meals/{mealId}": {
+      "schema": "Meal",
+      "description": "Logged meals."
+    },
+    "/workouts/{workoutId}": {
+      "schema": "Workout",
+      "description": "Logged workouts."
+    }
+  }
+}

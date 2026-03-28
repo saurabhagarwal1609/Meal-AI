@@ -1,0 +1,127 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // ===============================================================
+    // Assumed Data Model
+    // ===============================================================
+    //
+    // Collection: users
+    // Document ID: {userId}
+    // Fields:
+    //   - uid: string (required)
+    //   - displayName: string
+    //   - email: string (required)
+    //   - weight: number
+    //   - height: number
+    //   - age: number
+    //   - gender: string (male, female, other)
+    //   - activityLevel: string (sedentary, light, moderate, active, very_active)
+    //   - goal: string (lose_weight, maintain, gain_muscle)
+    //   - dailyCalorieTarget: number
+    //   - createdAt: timestamp
+    //
+    // Collection: meals
+    // Document ID: {mealId}
+    // Fields:
+    //   - uid: string (required)
+    //   - name: string (required)
+    //   - calories: number (required)
+    //   - protein: number
+    //   - carbs: number
+    //   - fat: number
+    //   - imageUrl: string
+    //   - timestamp: timestamp (required)
+    //
+    // Collection: workouts
+    // Document ID: {workoutId}
+    // Fields:
+    //   - uid: string (required)
+    //   - exerciseName: string (required)
+    //   - sets: number
+    //   - reps: number
+    //   - weight: number
+    //   - duration: number (minutes)
+    //   - intensity: string (low, medium, high)
+    //   - timestamp: timestamp (required)
+    //
+    // ===============================================================
+
+    // ===============================================================
+    // Helper Functions
+    // ===============================================================
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    function isDocOwner() {
+      return isAuthenticated() && request.auth.uid == resource.data.uid;
+    }
+
+    function isAdmin() {
+      return isAuthenticated() &&
+        (get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin' ||
+          (request.auth.token.email == "saurabhvsics@gmail.com" && request.auth.token.email_verified == true));
+    }
+
+    function isValidUser(data) {
+      return data.keys().hasAll(['uid', 'email']) &&
+             data.uid is string &&
+             data.email is string &&
+             (!('firstName' in data) || data.firstName is string) &&
+             (!('lastName' in data) || data.lastName is string) &&
+             (!('onboardingCompleted' in data) || data.onboardingCompleted is bool) &&
+             (!('weight' in data) || data.weight is number) &&
+             (!('height' in data) || data.height is number) &&
+             (!('age' in data) || data.age is number) &&
+             (!('dailyCalorieTarget' in data) || data.dailyCalorieTarget is number);
+    }
+
+    function isValidMeal(data) {
+      return data.keys().hasAll(['uid', 'name', 'calories', 'timestamp']) &&
+             data.uid is string &&
+             data.name is string &&
+             data.name.size() > 0 && data.name.size() < 100 &&
+             data.calories is number &&
+             data.timestamp is timestamp;
+    }
+
+    function isValidWorkout(data) {
+      return data.keys().hasAll(['uid', 'exerciseName', 'timestamp']) &&
+             data.uid is string &&
+             data.exerciseName is string &&
+             data.exerciseName.size() > 0 && data.exerciseName.size() < 100 &&
+             (!('duration' in data) || data.duration is number) &&
+             (!('intensity' in data) || (data.intensity is string && data.intensity in ['low', 'medium', 'high'])) &&
+             data.timestamp is timestamp;
+    }
+
+    // ===============================================================
+    // Rules
+    // ===============================================================
+
+    match /users/{userId} {
+      allow read: if isOwner(userId) || isAdmin();
+      allow create: if (isOwner(userId) && isValidUser(request.resource.data)) || isAdmin();
+      allow update: if (isOwner(userId) && isValidUser(request.resource.data)) || isAdmin();
+      allow delete: if isOwner(userId) || isAdmin();
+    }
+
+    match /meals/{mealId} {
+      allow read: if (isAuthenticated() && resource.data.uid == request.auth.uid) || isAdmin();
+      allow create: if (isAuthenticated() && request.resource.data.uid == request.auth.uid && isValidMeal(request.resource.data)) || isAdmin();
+      allow update: if (isAuthenticated() && resource.data.uid == request.auth.uid && isValidMeal(request.resource.data)) || isAdmin();
+      allow delete: if (isAuthenticated() && resource.data.uid == request.auth.uid) || isAdmin();
+    }
+
+    match /workouts/{workoutId} {
+      allow read: if (isAuthenticated() && resource.data.uid == request.auth.uid) || isAdmin();
+      allow create: if (isAuthenticated() && request.resource.data.uid == request.auth.uid && isValidWorkout(request.resource.data)) || isAdmin();
+      allow update: if (isAuthenticated() && resource.data.uid == request.auth.uid && isValidWorkout(request.resource.data)) || isAdmin();
+      allow delete: if (isAuthenticated() && resource.data.uid == request.auth.uid) || isAdmin();
+    }
+  }
+}
